@@ -11,10 +11,29 @@ em um **roteiro turístico personalizado**, gerado por IA, entregue no navegador
 
 ## Status
 
-🟡 **Fase 0 — Arquitetura aprovada?**
-Este repositório contém, neste momento, **apenas a especificação técnica**.
-Nenhum código de aplicação foi escrito ainda, conforme solicitado
-("antes de desenvolver, apresente a arquitetura...").
+🟢 **Sprint 0 — Fundação** concluído.
+
+Pronto e funcionando:
+- Next.js 15 + TypeScript + Tailwind, com os tokens de design de `docs/09`
+- Home: hero, 8 cards de destino, como funciona, o que vem no roteiro
+- Questionário completo de 7 etapas, com barra de progresso, rascunho em
+  `localStorage`, campos condicionais e validação por etapa
+- Catálogo dos 8 destinos tipado (`lib/catalogo/`), fonte única para UI e seed
+- Schema do banco em `prisma/schema.prisma`
+
+Próximo: Sprint 1 (banco + admin de catálogo) e Sprint 3 (motor de IA).
+
+## Rodando localmente
+
+```bash
+npm install
+npm run dev          # http://localhost:3000
+npm run build        # build de produção
+npm run typecheck
+```
+
+Ainda não é necessário banco de dados: a home e o questionário leem o
+catálogo tipado em `lib/catalogo/destinos.ts`.
 
 ## Documentação
 
