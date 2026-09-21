@@ -12,17 +12,80 @@ datasource db {
 
 // ─────────────────────────── ENUMS ───────────────────────────
 
-enum Confianca      { alta media baixa }
-enum Role           { cliente admin }
-enum StatusViagem   { rascunho previa_gerada pago roteiro_gerado falhou }
-enum StatusPedido   { criado aguardando_pagamento pago falhou reembolsado expirado }
-enum TipoRoteiro    { previa completo }
-enum Estilo         { economico equilibrado confortavel premium }
-enum Companhia      { sozinho casal amigos familia criancas grupo }
-enum Modal          { a_pe onibus metro app taxi transfer carro barco bicicleta }
-enum PeriodoDia     { manha almoco tarde fim_tarde noite }
-enum ContextoDica   { geral noite praia trilha transporte clima golpes pertences }
-enum TipoPOI        { atracao restaurante }
+enum Confianca {
+  alta
+  media
+  baixa
+}
+enum Role {
+  cliente
+  admin
+}
+enum StatusViagem {
+  rascunho
+  previa_gerada
+  pago
+  roteiro_gerado
+  falhou
+}
+enum StatusPedido {
+  criado
+  aguardando_pagamento
+  pago
+  falhou
+  reembolsado
+  expirado
+}
+enum TipoRoteiro {
+  previa
+  completo
+}
+enum Estilo {
+  economico
+  equilibrado
+  confortavel
+  premium
+}
+enum Companhia {
+  sozinho
+  casal
+  amigos
+  familia
+  criancas
+  grupo
+}
+enum Modal {
+  a_pe
+  onibus
+  metro
+  app
+  taxi
+  transfer
+  carro
+  barco
+  bicicleta
+}
+enum PeriodoDia {
+  manha
+  almoco
+  tarde
+  fim_tarde
+  noite
+}
+enum ContextoDica {
+  geral
+  noite
+  praia
+  trilha
+  transporte
+  clima
+  golpes
+  pertences
+}
+enum TipoPOI {
+  atracao
+  restaurante
+}
 
 // ─────────────────────────── CATÁLOGO ───────────────────────────
 
@@ -32,20 +95,20 @@ model Destino {
   nome           String
   estado         String   @db.Char(2)
   pais           String   @default("BR") @db.Char(2)
-  descricaoCurta String
-  descricaoLonga String?
+  descricaoCurta String @map("descricao_curta")
+  descricaoLonga String? @map("descricao_longa")
   categorias     String[]
   imagens        Json     @default("[]")
-  centroLat      Decimal? @db.Decimal(10, 7)
-  centroLng      Decimal? @db.Decimal(10, 7)
+  centroLat      Decimal? @db.Decimal(10, 7) @map("centro_lat")
+  centroLng      Decimal? @db.Decimal(10, 7) @map("centro_lng")
   fuso           String   @default("America/Sao_Paulo")
   moeda          String   @default("BRL")
-  notasTransito  String?
-  climaNotas     String?
-  melhorEpoca    Json?
+  notasTransito  String? @map("notas_transito")
+  climaNotas     String? @map("clima_notas")
+  melhorEpoca    Json? @map("melhor_epoca")
   ativo          Boolean  @default(true)
-  criadoEm       DateTime @default(now())
-  atualizadoEm   DateTime @updatedAt
+  criadoEm       DateTime @default(now()) @map("criado_em")
+  atualizadoEm   DateTime @updatedAt @map("atualizado_em")
 
   atracoes       Atracao[]
   restaurantes   Restaurante[]
@@ -58,7 +121,7 @@ model Destino {
 
 model Atracao {
   id                     String    @id @default(uuid())
-  destinoId              String
+  destinoId              String @map("destino_id")
   destino                Destino   @relation(fields: [destinoId], references: [id])
   nome                   String
   slug                   String
@@ -70,30 +133,30 @@ model Atracao {
   lat                    Decimal?  @db.Decimal(10, 7)
   lng                    Decimal?  @db.Decimal(10, 7)
   horarios               Json?     // { seg: [{abre,fecha}], ..., excecoes: [...] }
-  precoMin               Decimal?  @db.Decimal(10, 2)
-  precoMax               Decimal?  @db.Decimal(10, 2)
-  precoObs               String?
+  precoMin               Decimal?  @db.Decimal(10, 2) @map("preco_min")
+  precoMax               Decimal?  @db.Decimal(10, 2) @map("preco_max")
+  precoObs               String? @map("preco_obs")
   gratuito               Boolean   @default(false)
-  duracaoMin             Int?      // minutos
-  duracaoRecomendadaMin  Int?
-  perfisIndicados        String[]
-  melhorHorario          PeriodoDia[]
-  adequadoCriancas       Boolean   @default(true)
-  acessivelPcd           Boolean?
-  requerReserva          Boolean   @default(false)
+  duracaoMin             Int?      // minutos @map("duracao_min")
+  duracaoRecomendadaMin  Int? @map("duracao_recomendada_min")
+  perfisIndicados        String[] @map("perfis_indicados")
+  melhorHorario          PeriodoDia[] @map("melhor_horario")
+  adequadoCriancas       Boolean   @default(true) @map("adequado_criancas")
+  acessivelPcd           Boolean? @map("acessivel_pcd")
+  requerReserva          Boolean   @default(false) @map("requer_reserva")
   indoor                 Boolean   @default(false) // insumo do plano B de chuva
   sazonalidade           String?
-  infoSeguranca          String?
+  infoSeguranca          String? @map("info_seguranca")
   dicas                  String?
-  prioridadeBase         Int       @default(3) // 1..5
-  fonteUrl               String?
-  verificadoEm           DateTime?
+  prioridadeBase         Int       @default(3) // 1..5 @map("prioridade_base")
+  fonteUrl               String? @map("fonte_url")
+  verificadoEm           DateTime? @map("verificado_em")
   confianca              Confianca @default(media)
-  linkAfiliado           String?   // preparado para v2
-  parceiroId             String?
+  linkAfiliado           String?   // preparado para v2 @map("link_afiliado")
+  parceiroId             String? @map("parceiro_id")
   ativo                  Boolean   @default(true)
-  criadoEm               DateTime  @default(now())
-  atualizadoEm           DateTime  @updatedAt
+  criadoEm               DateTime  @default(now()) @map("criado_em")
+  atualizadoEm           DateTime  @updatedAt @map("atualizado_em")
 
   @@unique([destinoId, slug])
   @@index([destinoId, categoria, ativo])
@@ -102,26 +165,26 @@ model Atracao {
 
 model Restaurante {
   id               String    @id @default(uuid())
-  destinoId        String
+  destinoId        String @map("destino_id")
   destino          Destino   @relation(fields: [destinoId], references: [id])
   nome             String
   slug             String
   categoria        String    // cozinha: italiana, frutos do mar, cafeteria...
   tipos            PeriodoDia[] // café / almoço / jantar / noite
-  faixaPreco       Int       // 1..4  ($ .. $$$$)
-  ticketMedio      Decimal?  @db.Decimal(10, 2)
+  faixaPreco       Int       // 1..4  ($ .. $$$$) @map("faixa_preco")
+  ticketMedio      Decimal?  @db.Decimal(10, 2) @map("ticket_medio")
   bairro           String?
   endereco         String?
   lat              Decimal?  @db.Decimal(10, 7)
   lng              Decimal?  @db.Decimal(10, 7)
   horarios         Json?
-  perfisIndicados  String[]
+  perfisIndicados  String[] @map("perfis_indicados")
   vegetariano      Boolean   @default(false)
-  adequadoCriancas Boolean   @default(true)
-  requerReserva    Boolean   @default(false)
+  adequadoCriancas Boolean   @default(true) @map("adequado_criancas")
+  requerReserva    Boolean   @default(false) @map("requer_reserva")
   dicas            String?
-  fonteUrl         String?
-  verificadoEm     DateTime?
+  fonteUrl         String? @map("fonte_url")
+  verificadoEm     DateTime? @map("verificado_em")
   confianca        Confianca @default(media)
   ativo            Boolean   @default(true)
 
@@ -132,18 +195,18 @@ model Restaurante {
 
 model Transporte {
   id              String    @id @default(uuid())
-  destinoId       String
+  destinoId       String @map("destino_id")
   destino         Destino   @relation(fields: [destinoId], references: [id])
   modal           Modal
   regiao          String?
-  nomeLinha       String?
+  nomeLinha       String? @map("nome_linha")
   descricao       String
-  custoAprox      Decimal?  @db.Decimal(10, 2)
-  comoPagar       String?
-  horariosOperacao String?
+  custoAprox      Decimal?  @db.Decimal(10, 2) @map("custo_aprox")
+  comoPagar       String? @map("como_pagar")
+  horariosOperacao String? @map("horarios_operacao")
   observacoes     String?
-  fonteUrl        String?
-  verificadoEm    DateTime?
+  fonteUrl        String? @map("fonte_url")
+  verificadoEm    DateTime? @map("verificado_em")
   confianca       Confianca @default(media)
 
   @@index([destinoId, modal])
@@ -152,14 +215,14 @@ model Transporte {
 
 model DicaSeguranca {
   id           String        @id @default(uuid())
-  destinoId    String
+  destinoId    String @map("destino_id")
   destino      Destino       @relation(fields: [destinoId], references: [id])
   contexto     ContextoDica
   regiao       String?
   texto        String
   severidade   String        @default("info") // info | atencao
-  fonteUrl     String?
-  verificadoEm DateTime?
+  fonteUrl     String? @map("fonte_url")
+  verificadoEm DateTime? @map("verificado_em")
 
   @@index([destinoId, contexto])
   @@map("dicas_seguranca")
@@ -168,15 +231,15 @@ model DicaSeguranca {
 /// Matriz de deslocamentos pré-computada (Google Routes API), por par de POIs e modal.
 model PoiDistancia {
   id           String   @id @default(uuid())
-  origemTipo   TipoPOI
-  origemId     String
-  destinoTipo  TipoPOI
-  destinoId    String
+  origemTipo   TipoPOI @map("origem_tipo")
+  origemId     String @map("origem_id")
+  destinoTipo  TipoPOI @map("destino_tipo")
+  destinoId    String @map("destino_id")
   modal        Modal
   minutos      Int
   km           Decimal  @db.Decimal(8, 2)
-  custoAprox   Decimal? @db.Decimal(10, 2)
-  atualizadoEm DateTime @updatedAt
+  custoAprox   Decimal? @db.Decimal(10, 2) @map("custo_aprox")
+  atualizadoEm DateTime @updatedAt @map("atualizado_em")
 
   @@unique([origemId, destinoId, modal])
   @@index([origemId, modal])
@@ -192,10 +255,10 @@ model Usuario {
   telefone       String?
   role           Role      @default(cliente)
   preferencias   Json      @default("{}")
-  aceiteTermosEm DateTime?
-  aceiteMarketing Boolean  @default(false)
-  criadoEm       DateTime  @default(now())
-  excluidoEm     DateTime?
+  aceiteTermosEm DateTime? @map("aceite_termos_em")
+  aceiteMarketing Boolean  @default(false) @map("aceite_marketing")
+  criadoEm       DateTime  @default(now()) @map("criado_em")
+  excluidoEm     DateTime? @map("excluido_em")
 
   viagens Viagem[]
   pedidos Pedido[]
@@ -205,30 +268,30 @@ model Usuario {
 
 model Viagem {
   id               String       @id @default(uuid())
-  usuarioId        String?
+  usuarioId        String? @map("usuario_id")
   usuario          Usuario?     @relation(fields: [usuarioId], references: [id])
-  destinoId        String
+  destinoId        String @map("destino_id")
   destino          Destino      @relation(fields: [destinoId], references: [id])
   status           StatusViagem @default(rascunho)
 
   dias             Int
-  dataInicio       DateTime?
-  dataFim          DateTime?
+  dataInicio       DateTime? @map("data_inicio")
+  dataFim          DateTime? @map("data_fim")
   companhia        Companhia
   adultos          Int          @default(1)
   criancas         Int          @default(0)
-  idadesCriancas   Int[]
+  idadesCriancas   Int[] @map("idades_criancas")
   estilo           Estilo
-  orcamentoPessoa  Decimal?     @db.Decimal(10, 2)
+  orcamentoPessoa  Decimal?     @db.Decimal(10, 2) @map("orcamento_pessoa")
   perfil           String[]
   interesses       String[]
   transportes      String[]
-  desejosTexto     String?
-  desejosParseados Json?
-  respostasRaw     Json         @default("{}")
+  desejosTexto     String? @map("desejos_texto")
+  desejosParseados Json? @map("desejos_parseados")
+  respostasRaw     Json         @default("{}") @map("respostas_raw")
 
-  criadoEm         DateTime     @default(now())
-  atualizadoEm     DateTime     @updatedAt
+  criadoEm         DateTime     @default(now()) @map("criado_em")
+  atualizadoEm     DateTime     @updatedAt @map("atualizado_em")
 
   roteiros Roteiro[]
   pedidos  Pedido[]
@@ -239,23 +302,23 @@ model Viagem {
 
 model Roteiro {
   id            String      @id @default(uuid())
-  viagemId      String
+  viagemId      String @map("viagem_id")
   viagem        Viagem      @relation(fields: [viagemId], references: [id])
-  pedidoId      String?
+  pedidoId      String? @map("pedido_id")
   pedido        Pedido?     @relation(fields: [pedidoId], references: [id])
-  produtoId     String?
+  produtoId     String? @map("produto_id")
   produto       Produto?    @relation(fields: [produtoId], references: [id])
   tipo          TipoRoteiro
   versao        Int         @default(1)
   conteudo      Json        // RoteiroJSON validado — ver docs/07-motor-de-ia.md
-  modeloIa      String?
-  tokensEntrada Int?
-  tokensSaida   Int?
-  custoUsd      Decimal?    @db.Decimal(10, 5)
-  duracaoMs     Int?
-  pdfUrl        String?
-  pdfGeradoEm   DateTime?
-  criadoEm      DateTime    @default(now())
+  modeloIa      String? @map("modelo_ia")
+  tokensEntrada Int? @map("tokens_entrada")
+  tokensSaida   Int? @map("tokens_saida")
+  custoUsd      Decimal?    @db.Decimal(10, 5) @map("custo_usd")
+  duracaoMs     Int? @map("duracao_ms")
+  pdfUrl        String? @map("pdf_url")
+  pdfGeradoEm   DateTime? @map("pdf_gerado_em")
+  criadoEm      DateTime    @default(now()) @map("criado_em")
 
   @@unique([viagemId, tipo, versao])
   @@map("roteiros")
@@ -269,14 +332,14 @@ model Produto {
   nome                String
   descricao           String?
   beneficios          Json     @default("[]")
-  precoCentavos       Int
-  precoRiscadoCentavos Int?
+  precoCentavos       Int @map("preco_centavos")
+  precoRiscadoCentavos Int? @map("preco_riscado_centavos")
   moeda               String   @default("BRL")
-  secoesIncluidas     String[] // transporte, orcamento, seguranca, plano_b, ...
+  secoesIncluidas     String[] // transporte, orcamento, seguranca, plano_b, ... @map("secoes_incluidas")
   destaque            Boolean  @default(false)
   ordem               Int      @default(0)
   ativo               Boolean  @default(true)
-  atualizadoEm        DateTime @updatedAt
+  atualizadoEm        DateTime @updatedAt @map("atualizado_em")
 
   pedidos  Pedido[]
   roteiros Roteiro[]
@@ -286,22 +349,22 @@ model Produto {
 
 model Pedido {
   id                String       @id @default(uuid())
-  usuarioId         String
+  usuarioId         String @map("usuario_id")
   usuario           Usuario      @relation(fields: [usuarioId], references: [id])
-  viagemId          String
+  viagemId          String @map("viagem_id")
   viagem            Viagem       @relation(fields: [viagemId], references: [id])
-  produtoId         String
+  produtoId         String @map("produto_id")
   produto           Produto      @relation(fields: [produtoId], references: [id])
-  valorCentavos     Int
-  descontoCentavos  Int          @default(0)
+  valorCentavos     Int @map("valor_centavos")
+  descontoCentavos  Int          @default(0) @map("desconto_centavos")
   status            StatusPedido @default(criado)
   gateway           String       @default("mercadopago")
-  gatewayPedidoId   String?
-  gatewayPagamentoId String?
+  gatewayPedidoId   String? @map("gateway_pedido_id")
+  gatewayPagamentoId String? @map("gateway_pagamento_id")
   metodo            String?      // pix | cartao
-  pagoEm            DateTime?
-  expiraEm          DateTime?
-  criadoEm          DateTime     @default(now())
+  pagoEm            DateTime? @map("pago_em")
+  expiraEm          DateTime? @map("expira_em")
+  criadoEm          DateTime     @default(now()) @map("criado_em")
 
   pagamentos Pagamento[]
   roteiros   Roteiro[]
@@ -313,17 +376,17 @@ model Pedido {
 /// Log imutável de eventos do gateway. Garante idempotência do webhook.
 model Pagamento {
   id               String   @id @default(uuid())
-  pedidoId         String
+  pedidoId         String @map("pedido_id")
   pedido           Pedido   @relation(fields: [pedidoId], references: [id])
   gateway          String   @default("mercadopago")
-  eventoId         String
+  eventoId         String @map("evento_id")
   evento           String
   status           String
-  valorCentavos    Int?
+  valorCentavos    Int? @map("valor_centavos")
   payload          Json
-  assinaturaValida Boolean  @default(false)
-  recebidoEm       DateTime @default(now())
-  processadoEm     DateTime?
+  assinaturaValida Boolean  @default(false) @map("assinatura_valida")
+  recebidoEm       DateTime @default(now()) @map("recebido_em")
+  processadoEm     DateTime? @map("processado_em")
 
   @@unique([gateway, eventoId])
   @@map("pagamentos")
@@ -333,13 +396,13 @@ model Pagamento {
 model FonteVerificacao {
   id            String   @id @default(uuid())
   entidade      String   // atracao | restaurante | transporte | dica
-  entidadeId    String
+  entidadeId    String @map("entidade_id")
   campo         String
-  valorAnterior String?
-  valorNovo     String?
-  fonteUrl      String?
-  verificadoPor String?
-  verificadoEm  DateTime @default(now())
+  valorAnterior String? @map("valor_anterior")
+  valorNovo     String? @map("valor_novo")
+  fonteUrl      String? @map("fonte_url")
+  verificadoPor String? @map("verificado_por")
+  verificadoEm  DateTime @default(now()) @map("verificado_em")
 
   @@index([entidade, entidadeId])
   @@map("fontes_verificacao")

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { Questionario } from '@/components/questionario/questionario'
-import { buscarDestino } from '@/lib/catalogo/destinos'
+import { obterDestino } from '@/lib/db/destinos'
 
 export const metadata = { title: 'Monte seu roteiro' }
 
@@ -10,7 +10,7 @@ export default async function NovoRoteiroPage({
   searchParams: Promise<{ destino?: string }>
 }) {
   const { destino: slug } = await searchParams
-  const destino = slug ? buscarDestino(slug) : undefined
+  const destino = slug ? await obterDestino(slug) : undefined
 
   if (!destino) notFound()
 

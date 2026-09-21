@@ -10,3 +10,4 @@ build/
 .vercel
 .netlify
 coverage/
+tsconfig.tsbuildinfo

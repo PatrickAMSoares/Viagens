@@ -1,6 +1,6 @@
 import Link from 'next/link'
 import { DestinoCard } from '@/components/ui/destino-card'
-import { DESTINOS_ATIVOS } from '@/lib/catalogo/destinos'
+import { listarDestinos } from '@/lib/db/destinos'
 
 const COMO_FUNCIONA = [
   {
@@ -29,7 +29,9 @@ const INCLUSOS = [
   { icone: '📄', titulo: 'PDF para levar', texto: 'Roteiro completo em PDF, com capa, resumo financeiro e dicas finais.' },
 ]
 
-export default function HomePage() {
+export default async function HomePage() {
+  const destinos = await listarDestinos()
+
   return (
     <main>
       {/* ---------- HERO ---------- */}
@@ -84,7 +86,7 @@ export default function HomePage() {
           </header>
 
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {DESTINOS_ATIVOS.map((destino, i) => (
+            {destinos.map((destino, i) => (
               <DestinoCard key={destino.slug} destino={destino} prioridade={i < 4} />
             ))}
           </div>

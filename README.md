@@ -11,7 +11,7 @@ em um **roteiro turístico personalizado**, gerado por IA, entregue no navegador
 
 ## Status
 
-🟢 **Sprint 0 — Fundação** concluído.
+🟢 **Sprint 0 — Fundação** e **Sprint 1 — Catálogo + Admin** concluídos.
 
 Pronto e funcionando:
 - Next.js 15 + TypeScript + Tailwind, com os tokens de design de `docs/09`
@@ -19,21 +19,33 @@ Pronto e funcionando:
 - Questionário completo de 7 etapas, com barra de progresso, rascunho em
   `localStorage`, campos condicionais e validação por etapa
 - Catálogo dos 8 destinos tipado (`lib/catalogo/`), fonte única para UI e seed
-- Schema do banco em `prisma/schema.prisma`
+- Banco PostgreSQL com migration inicial, seed idempotente dos 8 destinos
+  e dos 3 produtos, e camada de dados com fallback para o catálogo estático
+- Painel administrativo em `/admin`: visão geral com cobertura do catálogo,
+  curadoria de atrações e edição de preços dos produtos
 
-Próximo: Sprint 1 (banco + admin de catálogo) e Sprint 3 (motor de IA).
+Próximo: Sprint 2 (landings de destino + prévia) e Sprint 3 (motor de IA).
 
 ## Rodando localmente
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000
-npm run build        # build de produção
+cp .env.example .env          # preencha DATABASE_URL e ADMIN_USER/ADMIN_PASSWORD
+
+npm run db:migrate            # cria o schema
+npm run db:seed               # 8 destinos + 3 produtos (idempotente)
+
+npm run dev                   # http://localhost:3000
+npm run build
 npm run typecheck
 ```
 
-Ainda não é necessário banco de dados: a home e o questionário leem o
-catálogo tipado em `lib/catalogo/destinos.ts`.
+Sem `DATABASE_URL`, a home e o questionário continuam funcionando lendo o
+catálogo tipado de `lib/catalogo/destinos.ts` — só o `/admin` exige banco.
+
+O painel fica em `/admin`, protegido por HTTP Basic
+(`ADMIN_USER` / `ADMIN_PASSWORD`). É uma medida temporária: o Sprint 4 traz
+Supabase Auth com magic link.
 
 ## Documentação
 
