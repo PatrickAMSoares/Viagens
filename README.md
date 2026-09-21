@@ -11,7 +11,7 @@ em um **roteiro turístico personalizado**, gerado por IA, entregue no navegador
 
 ## Status
 
-🟢 **Sprint 0 — Fundação** e **Sprint 1 — Catálogo + Admin** concluídos.
+🟢 **Sprints 0, 1 e 3** concluídos (fundação · catálogo e admin · motor de IA).
 
 Pronto e funcionando:
 - Next.js 15 + TypeScript + Tailwind, com os tokens de design de `docs/09`
@@ -24,7 +24,21 @@ Pronto e funcionando:
 - Painel administrativo em `/admin`: visão geral com cobertura do catálogo,
   curadoria de atrações e edição de preços dos produtos
 
-Próximo: Sprint 2 (landings de destino + prévia) e Sprint 3 (motor de IA).
+- Motor de IA em `lib/selecao` + `lib/ai`: seleção determinística de POIs,
+  agrupamento geográfico por região, montagem de prompt, validação
+  anti-alucinação com retry guiado e hidratação dos campos factuais
+  a partir do banco
+- 54 testes automatizados (`npm test`)
+
+Próximo: Sprint 2 (landings de destino + prévia) e Sprint 4 (checkout, PDF, e-mail).
+
+### Pendência conhecida do motor de IA
+
+O pipeline foi exercitado de ponta a ponta com um modelo injetado, incluindo
+o laço de retry. **A chamada real à Claude API ainda não foi executada** — não
+havia `ANTHROPIC_API_KEY` no ambiente. O formato do corpo da requisição também
+não é verificável sem chave: a API responde 401 antes de validar o corpo
+(testado). A primeira execução com chave real precisa ser acompanhada.
 
 ## Rodando localmente
 

@@ -58,22 +58,48 @@ function primeiraImagem(imagens: unknown): Destino['imagem'] {
   return { url: img.url, alt: img.alt ?? '', credito: img.credito ?? '' }
 }
 
+/**
+ * Banco indisponível não pode derrubar a vitrine.
+ *
+ * O catálogo estático cobre exatamente os mesmos 8 destinos, então servir a
+ * home a partir dele durante uma indisponibilidade é correto, não um
+ * paliativo. O erro é registrado para não passar despercebido — o /admin,
+ * que precisa do dado real, continua falhando alto de propósito.
+ */
+async function comFallback<T>(consulta: () => Promise<T>, reserva: T, ondeFalhou: string): Promise<T> {
+  if (!temBanco) return reserva
+  try {
+    return await consulta()
+  } catch (erro) {
+    console.error(`[catalogo] banco indisponível em ${ondeFalhou}, usando catálogo estático:`, erro)
+    return reserva
+  }
+}
+
 export const listarDestinos = unstable_cache(
-  async (): Promise<Destino[]> => {
-    if (!temBanco) return DESTINOS_ATIVOS
-    const linhas = await prisma.destino.findMany({
-      where: { ativo: true },
-      orderBy: [{ estado: 'asc' }, { nome: 'asc' }],
-    })
-    return linhas.length > 0 ? linhas.map(daLinha) : DESTINOS_ATIVOS
-  },
+  async (): Promise<Destino[]> =>
+    comFallback(
+      async () => {
+        const linhas = await prisma.destino.findMany({
+          where: { ativo: true },
+          orderBy: [{ estado: 'asc' }, { nome: 'asc' }],
+        })
+        return linhas.length > 0 ? linhas.map(daLinha) : DESTINOS_ATIVOS
+      },
+      DESTINOS_ATIVOS,
+      'listarDestinos',
+    ),
   ['destinos-ativos'],
   { revalidate: 300, tags: ['destinos'] },
 )
 
 export async function obterDestino(slug: string): Promise<Destino | undefined> {
-  if (!temBanco) return buscarEstatico(slug)
-  const linha = await prisma.destino.findUnique({ where: { slug } })
-  if (!linha || !linha.ativo) return buscarEstatico(slug)
-  return daLinha(linha)
+  return comFallback(
+    async () => {
+      const linha = await prisma.destino.findUnique({ where: { slug } })
+      return !linha || !linha.ativo ? buscarEstatico(slug) : daLinha(linha)
+    },
+    buscarEstatico(slug),
+    `obterDestino(${slug})`,
+  )
 }
