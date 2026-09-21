@@ -1,0 +1,346 @@
+// Meu Roteiro — schema de referência (rascunho para revisão, ainda não migrado)
+// Ver docs/03-banco-de-dados.md para a explicação de cada tabela.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────── ENUMS ───────────────────────────
+
+enum Confianca      { alta media baixa }
+enum Role           { cliente admin }
+enum StatusViagem   { rascunho previa_gerada pago roteiro_gerado falhou }
+enum StatusPedido   { criado aguardando_pagamento pago falhou reembolsado expirado }
+enum TipoRoteiro    { previa completo }
+enum Estilo         { economico equilibrado confortavel premium }
+enum Companhia      { sozinho casal amigos familia criancas grupo }
+enum Modal          { a_pe onibus metro app taxi transfer carro barco bicicleta }
+enum PeriodoDia     { manha almoco tarde fim_tarde noite }
+enum ContextoDica   { geral noite praia trilha transporte clima golpes pertences }
+enum TipoPOI        { atracao restaurante }
+
+// ─────────────────────────── CATÁLOGO ───────────────────────────
+
+model Destino {
+  id             String   @id @default(uuid())
+  slug           String   @unique
+  nome           String
+  estado         String   @db.Char(2)
+  pais           String   @default("BR") @db.Char(2)
+  descricaoCurta String
+  descricaoLonga String?
+  categorias     String[]
+  imagens        Json     @default("[]")
+  centroLat      Decimal? @db.Decimal(10, 7)
+  centroLng      Decimal? @db.Decimal(10, 7)
+  fuso           String   @default("America/Sao_Paulo")
+  moeda          String   @default("BRL")
+  notasTransito  String?
+  climaNotas     String?
+  melhorEpoca    Json?
+  ativo          Boolean  @default(true)
+  criadoEm       DateTime @default(now())
+  atualizadoEm   DateTime @updatedAt
+
+  atracoes       Atracao[]
+  restaurantes   Restaurante[]
+  transportes    Transporte[]
+  dicasSeguranca DicaSeguranca[]
+  viagens        Viagem[]
+
+  @@map("destinos")
+}
+
+model Atracao {
+  id                     String    @id @default(uuid())
+  destinoId              String
+  destino                Destino   @relation(fields: [destinoId], references: [id])
+  nome                   String
+  slug                   String
+  categoria              String    // praia, natureza, trilha, museu, mirante, parque...
+  subcategorias          String[]
+  descricao              String
+  endereco               String?
+  bairro                 String?
+  lat                    Decimal?  @db.Decimal(10, 7)
+  lng                    Decimal?  @db.Decimal(10, 7)
+  horarios               Json?     // { seg: [{abre,fecha}], ..., excecoes: [...] }
+  precoMin               Decimal?  @db.Decimal(10, 2)
+  precoMax               Decimal?  @db.Decimal(10, 2)
+  precoObs               String?
+  gratuito               Boolean   @default(false)
+  duracaoMin             Int?      // minutos
+  duracaoRecomendadaMin  Int?
+  perfisIndicados        String[]
+  melhorHorario          PeriodoDia[]
+  adequadoCriancas       Boolean   @default(true)
+  acessivelPcd           Boolean?
+  requerReserva          Boolean   @default(false)
+  indoor                 Boolean   @default(false) // insumo do plano B de chuva
+  sazonalidade           String?
+  infoSeguranca          String?
+  dicas                  String?
+  prioridadeBase         Int       @default(3) // 1..5
+  fonteUrl               String?
+  verificadoEm           DateTime?
+  confianca              Confianca @default(media)
+  linkAfiliado           String?   // preparado para v2
+  parceiroId             String?
+  ativo                  Boolean   @default(true)
+  criadoEm               DateTime  @default(now())
+  atualizadoEm           DateTime  @updatedAt
+
+  @@unique([destinoId, slug])
+  @@index([destinoId, categoria, ativo])
+  @@map("atracoes")
+}
+
+model Restaurante {
+  id               String    @id @default(uuid())
+  destinoId        String
+  destino          Destino   @relation(fields: [destinoId], references: [id])
+  nome             String
+  slug             String
+  categoria        String    // cozinha: italiana, frutos do mar, cafeteria...
+  tipos            PeriodoDia[] // café / almoço / jantar / noite
+  faixaPreco       Int       // 1..4  ($ .. $$$$)
+  ticketMedio      Decimal?  @db.Decimal(10, 2)
+  bairro           String?
+  endereco         String?
+  lat              Decimal?  @db.Decimal(10, 7)
+  lng              Decimal?  @db.Decimal(10, 7)
+  horarios         Json?
+  perfisIndicados  String[]
+  vegetariano      Boolean   @default(false)
+  adequadoCriancas Boolean   @default(true)
+  requerReserva    Boolean   @default(false)
+  dicas            String?
+  fonteUrl         String?
+  verificadoEm     DateTime?
+  confianca        Confianca @default(media)
+  ativo            Boolean   @default(true)
+
+  @@unique([destinoId, slug])
+  @@index([destinoId, faixaPreco, ativo])
+  @@map("restaurantes")
+}
+
+model Transporte {
+  id              String    @id @default(uuid())
+  destinoId       String
+  destino         Destino   @relation(fields: [destinoId], references: [id])
+  modal           Modal
+  regiao          String?
+  nomeLinha       String?
+  descricao       String
+  custoAprox      Decimal?  @db.Decimal(10, 2)
+  comoPagar       String?
+  horariosOperacao String?
+  observacoes     String?
+  fonteUrl        String?
+  verificadoEm    DateTime?
+  confianca       Confianca @default(media)
+
+  @@index([destinoId, modal])
+  @@map("transportes")
+}
+
+model DicaSeguranca {
+  id           String        @id @default(uuid())
+  destinoId    String
+  destino      Destino       @relation(fields: [destinoId], references: [id])
+  contexto     ContextoDica
+  regiao       String?
+  texto        String
+  severidade   String        @default("info") // info | atencao
+  fonteUrl     String?
+  verificadoEm DateTime?
+
+  @@index([destinoId, contexto])
+  @@map("dicas_seguranca")
+}
+
+/// Matriz de deslocamentos pré-computada (Google Routes API), por par de POIs e modal.
+model PoiDistancia {
+  id           String   @id @default(uuid())
+  origemTipo   TipoPOI
+  origemId     String
+  destinoTipo  TipoPOI
+  destinoId    String
+  modal        Modal
+  minutos      Int
+  km           Decimal  @db.Decimal(8, 2)
+  custoAprox   Decimal? @db.Decimal(10, 2)
+  atualizadoEm DateTime @updatedAt
+
+  @@unique([origemId, destinoId, modal])
+  @@index([origemId, modal])
+  @@map("poi_distancias")
+}
+
+// ─────────────────────────── USUÁRIOS E VIAGENS ───────────────────────────
+
+model Usuario {
+  id             String    @id @default(uuid())
+  email          String    @unique
+  nome           String?
+  telefone       String?
+  role           Role      @default(cliente)
+  preferencias   Json      @default("{}")
+  aceiteTermosEm DateTime?
+  aceiteMarketing Boolean  @default(false)
+  criadoEm       DateTime  @default(now())
+  excluidoEm     DateTime?
+
+  viagens Viagem[]
+  pedidos Pedido[]
+
+  @@map("usuarios")
+}
+
+model Viagem {
+  id               String       @id @default(uuid())
+  usuarioId        String?
+  usuario          Usuario?     @relation(fields: [usuarioId], references: [id])
+  destinoId        String
+  destino          Destino      @relation(fields: [destinoId], references: [id])
+  status           StatusViagem @default(rascunho)
+
+  dias             Int
+  dataInicio       DateTime?
+  dataFim          DateTime?
+  companhia        Companhia
+  adultos          Int          @default(1)
+  criancas         Int          @default(0)
+  idadesCriancas   Int[]
+  estilo           Estilo
+  orcamentoPessoa  Decimal?     @db.Decimal(10, 2)
+  perfil           String[]
+  interesses       String[]
+  transportes      String[]
+  desejosTexto     String?
+  desejosParseados Json?
+  respostasRaw     Json         @default("{}")
+
+  criadoEm         DateTime     @default(now())
+  atualizadoEm     DateTime     @updatedAt
+
+  roteiros Roteiro[]
+  pedidos  Pedido[]
+
+  @@index([status, criadoEm])
+  @@map("viagens")
+}
+
+model Roteiro {
+  id            String      @id @default(uuid())
+  viagemId      String
+  viagem        Viagem      @relation(fields: [viagemId], references: [id])
+  pedidoId      String?
+  pedido        Pedido?     @relation(fields: [pedidoId], references: [id])
+  produtoId     String?
+  produto       Produto?    @relation(fields: [produtoId], references: [id])
+  tipo          TipoRoteiro
+  versao        Int         @default(1)
+  conteudo      Json        // RoteiroJSON validado — ver docs/07-motor-de-ia.md
+  modeloIa      String?
+  tokensEntrada Int?
+  tokensSaida   Int?
+  custoUsd      Decimal?    @db.Decimal(10, 5)
+  duracaoMs     Int?
+  pdfUrl        String?
+  pdfGeradoEm   DateTime?
+  criadoEm      DateTime    @default(now())
+
+  @@unique([viagemId, tipo, versao])
+  @@map("roteiros")
+}
+
+// ─────────────────────────── COMERCIAL ───────────────────────────
+
+model Produto {
+  id                  String   @id @default(uuid())
+  slug                String   @unique // essencial | completo | premium
+  nome                String
+  descricao           String?
+  beneficios          Json     @default("[]")
+  precoCentavos       Int
+  precoRiscadoCentavos Int?
+  moeda               String   @default("BRL")
+  secoesIncluidas     String[] // transporte, orcamento, seguranca, plano_b, ...
+  destaque            Boolean  @default(false)
+  ordem               Int      @default(0)
+  ativo               Boolean  @default(true)
+  atualizadoEm        DateTime @updatedAt
+
+  pedidos  Pedido[]
+  roteiros Roteiro[]
+
+  @@map("produtos")
+}
+
+model Pedido {
+  id                String       @id @default(uuid())
+  usuarioId         String
+  usuario           Usuario      @relation(fields: [usuarioId], references: [id])
+  viagemId          String
+  viagem            Viagem       @relation(fields: [viagemId], references: [id])
+  produtoId         String
+  produto           Produto      @relation(fields: [produtoId], references: [id])
+  valorCentavos     Int
+  descontoCentavos  Int          @default(0)
+  status            StatusPedido @default(criado)
+  gateway           String       @default("mercadopago")
+  gatewayPedidoId   String?
+  gatewayPagamentoId String?
+  metodo            String?      // pix | cartao
+  pagoEm            DateTime?
+  expiraEm          DateTime?
+  criadoEm          DateTime     @default(now())
+
+  pagamentos Pagamento[]
+  roteiros   Roteiro[]
+
+  @@index([status, criadoEm])
+  @@map("pedidos")
+}
+
+/// Log imutável de eventos do gateway. Garante idempotência do webhook.
+model Pagamento {
+  id               String   @id @default(uuid())
+  pedidoId         String
+  pedido           Pedido   @relation(fields: [pedidoId], references: [id])
+  gateway          String   @default("mercadopago")
+  eventoId         String
+  evento           String
+  status           String
+  valorCentavos    Int?
+  payload          Json
+  assinaturaValida Boolean  @default(false)
+  recebidoEm       DateTime @default(now())
+  processadoEm     DateTime?
+
+  @@unique([gateway, eventoId])
+  @@map("pagamentos")
+}
+
+/// Trilha de auditoria de dados factuais (preço, horário, endereço...).
+model FonteVerificacao {
+  id            String   @id @default(uuid())
+  entidade      String   // atracao | restaurante | transporte | dica
+  entidadeId    String
+  campo         String
+  valorAnterior String?
+  valorNovo     String?
+  fonteUrl      String?
+  verificadoPor String?
+  verificadoEm  DateTime @default(now())
+
+  @@index([entidade, entidadeId])
+  @@map("fontes_verificacao")
+}
